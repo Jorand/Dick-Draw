@@ -1,0 +1,15 @@
+{
+  "name": "dickdraw",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index2.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "p5": "^0.5.14",
+    "paper": "^0.11.4"
+  }
+}

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dick Draw</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script type="text/javascript" src="node_modules/paper/dist/paper-full.js"></script>
+    <!-- <script type="text/paperscript" src="js/myScript.js" canvas="myCanvas"></script> -->
+    <script type="text/paperscript" canvas="canvas">
+
+        window.backgroundColor = function(color) {
+            var rect = new Path.Rectangle({
+                point: [0, 0],
+                size: [view.size.width, view.size.height],
+            });
+            rect.sendToBack();
+            rect.fillColor = color;
+        };
+
+        var strokeWidth = 8;
+        //tool.minDistance = toolSize;
+
+        var path;
+        // function onMouseDown(event) {
+        //     path = new Path();
+        //     path.strokeColor = 'black';
+        //     path.strokeWidth = toolSize;
+        //     path.strokeCap = 'round';
+        //     path.add(event.point);
+        // }
+
+
+        window.pen = new Tool({
+            minDistance: 8,
+            onMouseDown: function(event) {
+                path = new Path();
+                path.strokeColor = 'black';
+                path.strokeWidth = strokeWidth;
+                path.strokeCap = 'round';
+                path.add(event.point);
+            },
+            onMouseDrag: function(event) {
+                path.add(event.point);
+                path.smooth();
+            }
+        });
+
+        window.erase = new Tool({
+            minDistance: 0,
+            onMouseDown: function(event) {
+                path = new Path();
+                path.strokeColor = 'white';
+                path.strokeWidth = strokeWidth;
+                path.strokeCap = 'round';
+                path.add(event.point);
+            },
+            onMouseDrag: onMouseDrag
+        });
+
+        window.downloadAsSVG = function (fileName) {
+
+           if(!fileName) {
+               fileName = "paperjs_example.svg"
+           }
+
+           var url = "data:image/svg+xml;utf8," + encodeURIComponent(paper.project.exportSVG({asString:true}));
+
+           var link = document.createElement("a");
+           link.download = fileName;
+           link.href = url;
+           link.click();
+        }
+
+        function onMouseDrag(event) {
+            path.add(event.point);
+            path.smooth();
+        }
+
+        function onMouseUp(event) {
+            path.smooth();
+        }
+
+        var canvasColor = "#fff";
+        window.currentTool = 0; // 0 = pen, 1 = bucket
+
+        window.setTool = function(id) {
+            window.currentTool = id;
+        };
+
+        window.setSize = function(size) {
+            strokeWidth = size;
+        };
+
+        window.pen.activate()
+
+    </script>
+</head>
+<body>
+    <div class="dick_editor">
+        <div class="paper">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+        <div class="tools_bar">
+            <div class="tool">
+                <span class="tool_label">Tool</span>
+                <ul>
+                    <li><a class="active" href="#" onclick="setTool(0); return false;" title="Pen"><img src="images/Brush.svg" alt="Pen"></a></li>
+                    <li><a href="#" onclick="setTool(1); return false;" title="Bucket"><img src="images/Bucket.svg" alt="Bucket"></a></li>
+                </ul>
+            </div>
+            <div class="tool">
+                <span class="tool_label">Size</span>
+                <ul>
+                    <li><a href="#" onclick="setSize(7); return false;" title=""><span class="size" style="width: 7px; height:7px;"></span></a></li>
+                    <li><a href="#" onclick="setSize(9); return false;" title=""><span class="size" style="width: 9px; height:9px;"></span></a></li>
+                    <li><a href="#" onclick="setSize(14); return false;" title=""><span class="size" style="width: 14px; height:14px;"></span></a></li>
+                    <li><a href="#" onclick="setSize(20); return false;" title=""><span class="size" style="width: 20px; height:20px;"></span></a></li>
+                    <li><a href="#" onclick="setSize(25); return false;" title=""><span class="size" style="width: 25px; height:25px;"></span></a></li>
+                </ul>
+            </div>
+            <div class="tool">
+                <span class="tool_label">Color</span>
+                <ul>
+                    <li><a href="#" onclick="setColor('black'); return false;" title=""><span class="color" style="background-color: black"></span></a></li>
+                    <li><a href="#" onclick="setColor('blue'); return false;" title=""><span class="color" style="background-color: blue"></span></a></li>
+                    <li><a href="#" onclick="setColor('red'); return false;" title=""><span class="color" style="background-color: red"></span></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- <a href="#" onclick="pen.activate(); return false;">Pen</a>
+    <a href="#" onclick="erase.activate(); return false;">Eraser</a>
+    <a href="#" onclick="changeSW(2); return false;">o</a>
+    <a href="#" onclick="changeSW(20); return false;">O</a>
+    <a href="#" onclick="setBg('red'); return false;">bg</a>
+    <a href="#" onclick="downloadAsSVG(); return false;">save</a> -->
+
+</body>
+</html>

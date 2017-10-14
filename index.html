@@ -5,94 +5,200 @@
     <title>Dick Draw</title>
     <link rel="stylesheet" href="css/reset.css">
     <link rel="stylesheet" href="css/style.css">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <script type="text/javascript" src="node_modules/paper/dist/paper-full.js"></script>
     <!-- <script type="text/paperscript" src="js/myScript.js" canvas="myCanvas"></script> -->
     <script type="text/paperscript" canvas="canvas">
+        paper.install(window); // For offset.js
 
-        window.backgroundColor = function(color) {
-            var rect = new Path.Rectangle({
+        $(function() {
+
+            var bgColor = 'white';
+            var strokeWidth = 8;
+            var tools = {
+                'pen' : {
+                    'path': [],
+                    'color': 'black',
+                    'strokeWidth': strokeWidth
+                },
+                'eraser' : {
+                    'path': [],
+                    'color': bgColor,
+                    'strokeWidth': strokeWidth
+                },
+                'backgroundColor' : {}
+            };
+            var currentTool;
+
+            var penPath;
+            var cursor;
+            tools.pen.tool = new Tool({
+                minDistance: 0,
+                onMouseDown: function(event) {
+                    penPath = new Path();
+                    penPath.strokeColor = tools.pen.color;
+                    penPath.strokeWidth = tools.pen.strokeWidth;
+                    penPath.strokeCap = 'round';
+                    penPath.add(event.point);
+                },
+                onMouseDrag: function(event) {
+                    penPath.add(event.point);
+                    penPath.smooth();
+                },
+                onMouseUp: function(event) {
+                    tools.pen.path.push(penPath);
+                },
+                onMouseMove: function(event) {
+                    if(cursor) {cursor.remove();}
+                    cursor = new Path.Circle(event.point, tools.pen.strokeWidth/2);
+                    cursor.fillColor = tools.pen.color;
+                    drawCursor(event.point, tools.pen.strokeWidth/2, tools.pen.color);
+                }
+            });
+
+            var eraserPath;
+            tools.eraser.tool = new Tool({
+                minDistance: 0,
+                onMouseDown: function(event) {
+                    eraserPath = new Path();
+                    eraserPath.strokeColor = tools.eraser.color;
+                    eraserPath.strokeWidth = tools.eraser.strokeWidth;
+                    eraserPath.strokeJoin = 'round';
+                    eraserPath.strokeCap = 'round';
+                    //eraserPath.fullySelected = true;
+                    //eraserPath.selectedColor = 'black';
+                    //eraserPath.fillColor = 'blue';
+                    eraserPath.add(event.point);
+                },
+                onMouseDrag: function(event) {
+                    eraserPath.add(event.point);
+                    eraserPath.smooth();
+
+                    drawCursor(event.point, tools.eraser.strokeWidth/2, tools.eraser.color, "black");
+                },
+                onMouseUp: function(event) {
+                    eraserPath.add(event.point);
+                    tools.eraser.path.push(eraserPath);
+                    //penPath.divide(offsetPaths);
+                },
+                onMouseMove: function(event) {
+                    drawCursor(event.point, tools.eraser.strokeWidth/2, tools.eraser.color, "black");
+                }
+            });
+            function drawCursor(point, radius, fillColor, strokeColor) {
+                if(cursor) {cursor.remove();}
+                cursor = new Path.Circle(point, radius);
+                if(strokeColor) {
+                    cursor.strokeColor = strokeColor;
+                }
+                cursor.fillColor = fillColor;
+
+                if(point.x > view.size.width || point.x < 0 || point.y > view.size.height || point.y < 0) {
+                    if(cursor) {cursor.remove();}
+                }
+            }
+
+            tools.backgroundColor.tool = new Tool();
+
+            // Background
+            var bg = new Path.Rectangle({
                 point: [0, 0],
                 size: [view.size.width, view.size.height],
             });
-            rect.sendToBack();
-            rect.fillColor = color;
-        };
+            bg.sendToBack();
+            bg.fillColor = bgColor;
 
-        var strokeWidth = 8;
-        //tool.minDistance = toolSize;
+            //
 
-        var path;
-        // function onMouseDown(event) {
-        //     path = new Path();
-        //     path.strokeColor = 'black';
-        //     path.strokeWidth = toolSize;
-        //     path.strokeCap = 'round';
-        //     path.add(event.point);
-        // }
+            /* FUNCTIONS*/
+            window.setTool = function(toolName) {
+                if(toolName == currentTool) {
+                    return false;
+                }
+                var changeTool = false;
+                switch (toolName) {
+                    case 'pen':
+                        changeTool = true;
+                        $("#toolSize, #toolColor").show();
+                        break;
+                    case 'eraser':
+                        changeTool = true;
+                        $("#toolSize").show();
+                        $("#toolColor").hide();
+                        break;
+                    case 'backgroundColor':
+                        changeTool = true;
+                        $("#toolColor").show();
+                        $("#toolSize").hide();
+                        break;
 
+                    default:
+                        console.warn("This tool is not setup : "+toolName);
+                }
 
-        window.pen = new Tool({
-            minDistance: 8,
-            onMouseDown: function(event) {
-                path = new Path();
-                path.strokeColor = 'black';
-                path.strokeWidth = strokeWidth;
-                path.strokeCap = 'round';
-                path.add(event.point);
-            },
-            onMouseDrag: function(event) {
-                path.add(event.point);
-                path.smooth();
+                if(changeTool) {
+                    if(!tools[toolName]) {
+                        console.warn("This tool does not exist : "+toolName);
+                        return false;
+                    }
+                    tools[toolName].tool.activate();
+                    currentTool = toolName;
+                }
+
+                $(".tool_item").removeClass('active');
+                $("#"+currentTool).addClass('active');
+
+                console.log(currentTool);
+            };
+
+            window.setSize = function(size) {
+                tools[currentTool].strokeWidth = size;
+            };
+
+            window.setColor = function(color) {
+                switch (currentTool) {
+                    case 'pen':
+                        tools[currentTool].color = color;
+                        break;
+                    case 'backgroundColor':
+                        setBackgroundColor(color);
+                        break;
+
+                    default:
+                        console.warn("setColor is not setup for : "+toolName);
+                }
+
+            };
+
+            var setBackgroundColor = function(color) {
+                bg.fillColor = color;
+                for (var i = 0; i < tools.eraser.path.length; i++) {
+                    tools.eraser.path[i].strokeColor = color;
+                }
+                tools.eraser.color = color;
+            };
+
+            /* SETUP */
+            setBackgroundColor(bgColor);
+            window.setTool('pen');
+
+            /* DL */
+            window.downloadAsSVG = function (fileName) {
+
+                var timestamp = new Date().getUTCMilliseconds();
+
+                if(!fileName) {
+                    fileName = "my_amazing_dickdraw_"+timestamp+".svg"
+                }
+
+                var url = "data:image/svg+xml;utf8," + encodeURIComponent(paper.project.exportSVG({asString:true}));
+
+                var link = document.createElement("a");
+                link.download = fileName;
+                link.href = url;
+                link.click();
             }
         });
-
-        window.erase = new Tool({
-            minDistance: 0,
-            onMouseDown: function(event) {
-                path = new Path();
-                path.strokeColor = 'white';
-                path.strokeWidth = strokeWidth;
-                path.strokeCap = 'round';
-                path.add(event.point);
-            },
-            onMouseDrag: onMouseDrag
-        });
-
-        window.downloadAsSVG = function (fileName) {
-
-           if(!fileName) {
-               fileName = "paperjs_example.svg"
-           }
-
-           var url = "data:image/svg+xml;utf8," + encodeURIComponent(paper.project.exportSVG({asString:true}));
-
-           var link = document.createElement("a");
-           link.download = fileName;
-           link.href = url;
-           link.click();
-        }
-
-        function onMouseDrag(event) {
-            path.add(event.point);
-            path.smooth();
-        }
-
-        function onMouseUp(event) {
-            path.smooth();
-        }
-
-        var canvasColor = "#fff";
-        window.currentTool = 0; // 0 = pen, 1 = bucket
-
-        window.setTool = function(id) {
-            window.currentTool = id;
-        };
-
-        window.setSize = function(size) {
-            strokeWidth = size;
-        };
-
-        window.pen.activate()
 
     </script>
 </head>
@@ -105,27 +211,32 @@
             <div class="tool">
                 <span class="tool_label">Tool</span>
                 <ul>
-                    <li><a class="active" href="#" onclick="setTool(0); return false;" title="Pen"><img src="images/Brush.svg" alt="Pen"></a></li>
-                    <li><a href="#" onclick="setTool(1); return false;" title="Bucket"><img src="images/Bucket.svg" alt="Bucket"></a></li>
+                    <li><a class="tool_item" id="pen" href="#" onclick="window.setTool('pen'); return false;" title="Pen"><img src="images/Brush.svg" alt="Pen"></a></li>
+                    <li><a class="tool_item" id="backgroundColor" href="#" onclick="window.setTool('backgroundColor');; return false;" title="Bucket"><img src="images/Bucket.svg" alt="Bucket"></a></li>
+                    <li><a class="tool_item" id="eraser" href="#" onclick="window.setTool('eraser'); return false;" title="Eraser">Eraser</a></li>
                 </ul>
             </div>
-            <div class="tool">
+            <div class="tool" id="toolSize">
                 <span class="tool_label">Size</span>
                 <ul>
-                    <li><a href="#" onclick="setSize(7); return false;" title=""><span class="size" style="width: 7px; height:7px;"></span></a></li>
-                    <li><a href="#" onclick="setSize(9); return false;" title=""><span class="size" style="width: 9px; height:9px;"></span></a></li>
-                    <li><a href="#" onclick="setSize(14); return false;" title=""><span class="size" style="width: 14px; height:14px;"></span></a></li>
-                    <li><a href="#" onclick="setSize(20); return false;" title=""><span class="size" style="width: 20px; height:20px;"></span></a></li>
-                    <li><a href="#" onclick="setSize(25); return false;" title=""><span class="size" style="width: 25px; height:25px;"></span></a></li>
+                    <li><a href="#" onclick="window.setSize(7); return false;" title=""><span class="size" style="width: 7px; height:7px;"></span></a></li>
+                    <li><a href="#" onclick="window.setSize(9); return false;" title=""><span class="size" style="width: 9px; height:9px;"></span></a></li>
+                    <li><a href="#" onclick="window.setSize(14); return false;" title=""><span class="size" style="width: 14px; height:14px;"></span></a></li>
+                    <li><a href="#" onclick="window.setSize(20); return false;" title=""><span class="size" style="width: 20px; height:20px;"></span></a></li>
+                    <li><a href="#" onclick="window.setSize(25); return false;" title=""><span class="size" style="width: 25px; height:25px;"></span></a></li>
                 </ul>
             </div>
-            <div class="tool">
+            <div class="tool" id="toolColor">
                 <span class="tool_label">Color</span>
                 <ul>
-                    <li><a href="#" onclick="setColor('black'); return false;" title=""><span class="color" style="background-color: black"></span></a></li>
-                    <li><a href="#" onclick="setColor('blue'); return false;" title=""><span class="color" style="background-color: blue"></span></a></li>
-                    <li><a href="#" onclick="setColor('red'); return false;" title=""><span class="color" style="background-color: red"></span></a></li>
+                    <li><a href="#" onclick="window.setColor('black'); return false;" title=""><span class="color" style="background-color: black"></span></a></li>
+                    <li><a href="#" onclick="window.setColor('blue'); return false;" title=""><span class="color" style="background-color: blue"></span></a></li>
+                    <li><a href="#" onclick="window.setColor('red'); return false;" title=""><span class="color" style="background-color: red"></span></a></li>
                 </ul>
+            </div>
+
+            <div class="action">
+                <a href="#" id="save" onclick="window.downloadAsSVG(); return false;">Publish</a>
             </div>
         </div>
     </div>

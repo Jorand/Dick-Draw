@@ -43,14 +43,15 @@ body {
 				vertical-align: middle;
 			}
 
-			.tool ul li a {
+			.tool .tool_item {
 				width: 30px;
 				height: 100%;
 				display: block;
 				text-align: center;
 				padding-top: 5px;
+				opacity: 0.5;
 			}
-			.tool ul li a.active {
+			.tool .tool_item.active {
 				opacity: 1;
 			}
 
@@ -59,6 +60,29 @@ body {
 					width: 20px;
 					height: 20px;
 				}
+
+		.action {
+			display: inline-block;
+			float: right;
+			padding: 20px 30px;
+			padding-left: 10px;
+		}
+
+			#save {
+				display: block;
+				padding: 8px 15px;
+				min-width: 135px;
+				height: 32px;
+				font-size: 0.8em;
+				text-align: center;
+				text-transform: uppercase;
+				text-decoration: none;
+				color: #fff;
+				background-color: #40accf;
+				border-radius: 4px;
+			}
+
+
 	.size {
 		display: inline-block;
 		border-radius: 60px;

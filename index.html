@@ -183,7 +183,7 @@
             window.setTool('pen');
 
             /* DL */
-            window.downloadAsSVG = function (fileName) {
+            window.downloadSVG = function (fileName) {
 
                 var timestamp = new Date().getUTCMilliseconds();
 
@@ -191,13 +191,17 @@
                     fileName = "my_amazing_dickdraw_"+timestamp+".svg"
                 }
 
-                var url = "data:image/svg+xml;utf8," + encodeURIComponent(paper.project.exportSVG({asString:true}));
+                var url = "data:image/svg+xml;utf8," + encodeURIComponent(getSVG());
 
                 var link = document.createElement("a");
                 link.download = fileName;
                 link.href = url;
                 link.click();
-            }
+            };
+
+			function getSVG() {
+                return paper.project.exportSVG({asString:true});
+            };
         });
 
     </script>
@@ -236,7 +240,7 @@
             </div>
 
             <div class="action">
-                <a href="#" id="save" onclick="window.downloadAsSVG(); return false;">Publish</a>
+                <a href="#" id="save" onclick="window.downloadSVG(); return false;">Publish</a>
             </div>
         </div>
     </div>

@@ -184,19 +184,19 @@
 
             /* DL */
             window.downloadSVG = function (fileName) {
-
-                var timestamp = new Date().getUTCMilliseconds();
-
-                if(!fileName) {
-                    fileName = "my_amazing_dickdraw_"+timestamp+".svg"
-                }
-
-                var url = "data:image/svg+xml;utf8," + encodeURIComponent(getSVG());
-
-                var link = document.createElement("a");
-                link.download = fileName;
-                link.href = url;
-                link.click();
+                var svg_content = getSVG();
+                $.ajax("http://localhost:3000/drawings", { 
+                    method: "POST",
+                    contentType: "application/vnd.api+json", 
+                    // headers: { "Accept" :  "application/vnd.api+json" }
+                    dataType: "json", 
+                    data: { 
+                        "data": { 
+                            "type": "drawings",
+                            "attributes": { "name": "bite de luxe", "svg": JSON.stringify(svg_content) }
+                    }}}).fail(function(data) {
+                        console.log(data);
+                      });
             };
 
 			function getSVG() {
